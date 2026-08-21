@@ -23,6 +23,6 @@ Uses `GET /v2/rates?from=&to=&base=&quotes=` (avoids `..` in the path).
 CSV columns: `FromCurrency,ToCurrency,RateType,Rate,Period,Year,EffectiveDate`  
 `RateType` is `Ending` (balance sheet / last day in series) or `Average` (P&L / mean of returned days).
 
-Debug: `DEBUG = true` prints step lines; exceptions are caught and rethrown via `throwVetoException`. Set `DEBUG = false` when done.
+Debug: exceptions are caught and rethrown via `throwVetoException`.
 
 Pipeline POST uses the same out-of-box variables as Part 2 (`STARTPERIOD`, `ENDPERIOD`, `IMPORTMODE`, `EXPORTMODE`, `ATTACH_LOGS`, `SEND_MAIL`, `SEND_TO`). Edit the config defaults (or drop a key) to match your Pipeline.

@@ -4,7 +4,6 @@ import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.util.ArrayList
 import java.util.HashMap
 import java.util.List
 import java.util.Map
@@ -21,13 +20,7 @@ class EpmRestConfig {
     Object payload
 }
 
-// --- DEBUG. Flip to false when done. Delete DEBUG lines later. ---
-boolean DEBUG = true
-
 def callEpm = { EpmRestConfig cfg ->
-    if (DEBUG) {
-        println "DEBUG[callEpm] begin name=" + cfg.connectionName + " method=" + cfg.method + " path=" + cfg.path
-    }
     def conn = operation.application.getConnection(cfg.connectionName)
     String method = cfg.method.toUpperCase()
     String jsonBody = cfg.payload == null ? null : JsonOutput.toJson(cfg.payload)
@@ -61,13 +54,6 @@ def callEpm = { EpmRestConfig cfg ->
     }
 
     println "status=" + response.status + " " + response.statusText + " " + method + " " + cfg.path
-    if (DEBUG) {
-        String bodyPreview = response.body == null ? "null" : response.body.toString()
-        if (bodyPreview.length() > 500) {
-            bodyPreview = bodyPreview.substring(0, 500) + "...(truncated)"
-        }
-        println "DEBUG[callEpm] bodyPreview=" + bodyPreview
-    }
 
     if (response.status < 200 || response.status >= 300) {
         throwVetoException("EPM REST " + method + " " + cfg.path + " failed: " + response.status + " " + response.body)
@@ -106,22 +92,12 @@ periodToMonth.put("Nov", Integer.valueOf(11))
 periodToMonth.put("Dec", Integer.valueOf(12))
 
 try {
-    if (DEBUG) {
-        println "DEBUG[start] rule begin"
-    }
-
     String period = rtps.fxPeriod.toString()
     String year   = rtps.fxYear.toString()
-    if (DEBUG) {
-        println "DEBUG[rtps] fxPeriod=[" + period + "] fxYear=[" + year + "]"
-    }
 
     String periodKey = period.length() >= 3 ? period.substring(0, 3) : period
     periodKey = periodKey.substring(0, 1).toUpperCase() + periodKey.substring(1).toLowerCase()
     Object monthObj = periodToMonth.get(periodKey)
-    if (DEBUG) {
-        println "DEBUG[period] periodKey=[" + periodKey + "] monthObj=" + monthObj
-    }
     if (monthObj == null) {
         throwVetoException("Unknown fxPeriod=" + period + ". Expected Jan..Dec (optional suffix ok).")
     }
@@ -144,9 +120,6 @@ try {
     if (calYear < 100) {
         calYear = 2000 + calYear
     }
-    if (DEBUG) {
-        println "DEBUG[year] yearDigits=[" + yearDigits + "] calYear=" + calYear
-    }
 
     int lastDay = 31
     if (monthNum == 4 || monthNum == 6 || monthNum == 9 || monthNum == 11) {
@@ -160,9 +133,6 @@ try {
     String lastDayPad = lastDay < 10 ? "0" + lastDay : "" + lastDay
     String fromDate = "" + calYear + "-" + monthNumPad + "-01"
     String toDate = "" + calYear + "-" + monthNumPad + "-" + lastDayPad
-    if (DEBUG) {
-        println "DEBUG[dates] fromDate=" + fromDate + " toDate=" + toDate
-    }
 
     StringBuilder symbols = new StringBuilder()
     int s = 0
@@ -177,9 +147,6 @@ try {
     // v2 query form avoids ".." in the path (Connections can choke on that).
     String fxPath = "/v2/rates?from=" + fromDate + "&to=" + toDate +
         "&base=" + reportingCurrency + "&quotes=" + symbols.toString()
-    if (DEBUG) {
-        println "DEBUG[frankfurter] path=" + fxPath
-    }
 
     EpmRestConfig cfg = new EpmRestConfig(
         connectionName: fxConnection,
@@ -189,18 +156,12 @@ try {
     )
 
     HttpResponse response = callEpm(cfg)
-    if (DEBUG) {
-        println "DEBUG[frankfurter] GET returned, parsing JSON"
-    }
     JsonSlurper slurper = new JsonSlurper()
     Object parsed = slurper.parseText(response.body as String)
     if (!(parsed instanceof List)) {
         throwVetoException("Frankfurter v2 expected a JSON array. Got: " + parsed.getClass().getName())
     }
     List rows = (List) parsed
-    if (DEBUG) {
-        println "DEBUG[frankfurter] rowCount=" + rows.size()
-    }
     if (rows.isEmpty()) {
         throwVetoException("Frankfurter returned no rows for " + fromDate + ".." + toDate)
     }
@@ -243,17 +204,11 @@ try {
         String endDate = (String) endDateByCcy.get(ccy)
         BigDecimal endRate = (BigDecimal) endRateByCcy.get(ccy)
 
-        if (DEBUG) {
-            println "DEBUG[ccy] " + ccy + " count=" + count + " endDate=" + endDate + " endRate=" + endRate + " sum=" + sum
-        }
         if (count == null || count.intValue() == 0 || endDate == null || endRate == null || sum == null) {
             throwVetoException("No Frankfurter rates for " + ccy + " in " + fromDate + ".." + toDate)
         }
 
         BigDecimal avgRate = sum.divide(new BigDecimal(count.intValue()), 8, RoundingMode.HALF_UP)
-        if (DEBUG) {
-            println "DEBUG[ccy] " + ccy + " avgRate=" + avgRate
-        }
 
         csv.append(ccy).append(",").append(reportingCurrency).append(",Ending,")
             .append(endRate.toPlainString()).append(",").append(period).append(",")
@@ -264,9 +219,6 @@ try {
         i++
     }
 
-    if (DEBUG) {
-        println "DEBUG[file] csvChars=" + csv.length() + " writing " + ratesFile
-    }
     Writer writer = null
     try {
         writer = createFileWriter(ratesFile)
@@ -277,13 +229,7 @@ try {
         }
     }
     println "Wrote " + ratesFile + " Ending+Average for " + entityCurrencies.size() + " currencies " + fromDate + ".." + toDate
-    if (DEBUG) {
-        println "DEBUG[file] write closed ok"
-    }
 
-    if (DEBUG) {
-        println "DEBUG[pipeline] POST " + pipelineCode + " via " + epmConnection
-    }
     cfg = new EpmRestConfig(
         connectionName: epmConnection,
         method: "POST",
@@ -307,9 +253,6 @@ try {
     Map job = slurper.parseText(response.body as String) as Map
     String jobId = job.get("jobId").toString()
     int jobStatus = Integer.parseInt(job.get("status").toString())
-    if (DEBUG) {
-        println "DEBUG[pipeline] jobId=" + jobId + " status=" + jobStatus
-    }
 
     int pollMs = 15000
     int maxPolls = 40
@@ -336,18 +279,10 @@ try {
     if (jobStatus != 0) {
         throwVetoException("Pipeline " + pipelineCode + " failed: status=" + jobStatus + " jobId=" + jobId + " " + response.body)
     }
-    if (DEBUG) {
-        println "DEBUG[done] pipeline ok status=" + jobStatus
-    }
 } catch (Exception e) {
     String msg = e.getMessage()
     if (msg == null || msg.length() == 0) {
         msg = e.toString()
-    }
-    println "DEBUG[exception] class=" + e.getClass().getName() + " msg=" + msg
-    Throwable cause = e.getCause()
-    if (cause != null) {
-        println "DEBUG[exception] cause=" + cause.getClass().getName() + " " + cause.getMessage()
     }
     throwVetoException("FX rule failed: " + msg)
 }
