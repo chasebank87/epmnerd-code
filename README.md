@@ -2,12 +2,18 @@
 
 Groovy, REST payloads, and other paste-ready files from [epmnerd.com](https://epmnerd.com) posts.
 
-Each folder matches a post slug. Open the folder, read its README, paste the file into Calc Manager or wherever the post says.
+Standalone posts use a flat folder matching the slug. Multi-part series use one bucket for the series and a folder per part:
 
 ```text
 posts/<post-slug>/
   README.md
   <one or two files>
+
+posts/<series-id>/
+  README.md
+  <part-slug>/
+    README.md
+    <files>
 ```
 
 ```bash
@@ -18,6 +24,6 @@ git clone https://github.com/chasebank87/epmnerd-code.git
 
 | Post | Folder |
 | --- | --- |
-| [Calling EPM Cloud REST from Groovy via Connections](https://epmnerd.com/blog/calling-epm-rest-from-groovy) | [`posts/calling-epm-rest-from-groovy`](posts/calling-epm-rest-from-groovy) |
+| [EPM REST from Groovy via Connections](https://epmnerd.com/blog/named-connections-for-epm-rest) (series) | [`posts/epm-rest-from-groovy`](posts/epm-rest-from-groovy) |
 
 No credentials. Named Connections in the EPM app hold the host and Basic auth.

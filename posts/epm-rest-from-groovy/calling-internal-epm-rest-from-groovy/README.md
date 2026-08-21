@@ -1,6 +1,8 @@
-# Calling EPM Cloud REST from Groovy via Connections
+# Calling Internal EPM REST APIs from Groovy (Part 2)
 
-Post: [epmnerd.com/blog/calling-epm-rest-from-groovy](https://epmnerd.com/blog/calling-epm-rest-from-groovy)
+Post: [epmnerd.com/blog/calling-internal-epm-rest-from-groovy](https://epmnerd.com/blog/calling-internal-epm-rest-from-groovy)
+
+Series: [EPM REST from Groovy via Connections](../README.md)
 
 All files share the same `EpmRestConfig` + `callEpm` boilerplate from the post. Paste one rule at a time.
 
@@ -13,7 +15,7 @@ All files share the same `EpmRestConfig` + `callEpm` boilerplate from the post. 
 
 ## Shared setup
 
-1. Connections → **Other Web Service Provider**. Name it `EPM_REST`. URL is `BASE-URL` only (no `/epmcloud`).
+1. Connections → **Other Web Service Provider**. Name it `EPM_REST`. URL is `BASE-URL` only (no `/epmcloud`). See [Part 1](../named-connections-for-epm-rest/).
 2. Planning STC landmines already handled in these files:
    - Closure for `callEpm`, not a nested method (`run()` wrap).
    - Anything that calls `callEpm` must also be a closure (methods cannot see it).
