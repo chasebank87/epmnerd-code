@@ -25,4 +25,4 @@ CSV columns: `FromCurrency,ToCurrency,RateType,Rate,Period,Year,EffectiveDate`
 
 Debug: `DEBUG = true` prints step lines; exceptions are caught and rethrown via `throwVetoException`. Set `DEBUG = false` when done.
 
-Drop `YEAR` from the pipeline `variables` map if your Pipeline definition does not declare it.
+Pipeline POST uses the same out-of-box variables as Part 2 (`STARTPERIOD`, `ENDPERIOD`, `IMPORTMODE`, `EXPORTMODE`, `ATTACH_LOGS`, `SEND_MAIL`, `SEND_TO`). Edit the config defaults (or drop a key) to match your Pipeline.

@@ -84,6 +84,12 @@ String reportingCurrency  = "USD"
 List entityCurrencies     = ["EUR", "GBP", "CAD", "MXN", "JPY"] as List
 String ratesFile          = "frankfurter_fccs_rates.csv"
 String pipelineCode       = "PL-ERAPI-FCCS-RATES"
+// Out-of-box pipeline variables (same keys as Part 2). Edit to match your Pipeline.
+String importMode         = "Replace"
+String exportMode         = "None"
+String attachLogs         = "N"
+String sendMail           = "N"
+String sendTo             = ""
 
 Map periodToMonth = new HashMap()
 periodToMonth.put("Jan", Integer.valueOf(1))
@@ -288,7 +294,11 @@ try {
             variables: [
                 STARTPERIOD: period,
                 ENDPERIOD:   period,
-                YEAR:        year
+                IMPORTMODE:  importMode,
+                EXPORTMODE:  exportMode,
+                ATTACH_LOGS: attachLogs,
+                SEND_MAIL:   sendMail,
+                SEND_TO:     sendTo
             ]
         ]
     )
