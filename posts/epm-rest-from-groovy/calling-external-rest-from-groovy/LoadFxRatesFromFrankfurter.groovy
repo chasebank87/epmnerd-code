@@ -87,9 +87,9 @@ String pipelineCode       = "PL-ERAPI-FCCS-RATES"
 // Out-of-box pipeline variables (same keys as Part 2). Edit to match your Pipeline.
 String importMode         = "Replace"
 String exportMode         = "None"
-String attachLogs         = "N"
-String sendMail           = "N"
-String sendTo             = ""
+String attachLogs         = "Yes"
+String sendMail           = "Always"
+String sendTo             = "john.doe@email.com"
 
 Map periodToMonth = new HashMap()
 periodToMonth.put("Jan", Integer.valueOf(1))
