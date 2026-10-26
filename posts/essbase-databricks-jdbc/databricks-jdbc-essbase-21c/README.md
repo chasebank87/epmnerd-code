@@ -1,6 +1,8 @@
-# Databricks JDBC for Essbase 21c
+# Databricks JDBC for Essbase 21c (Part 1)
 
 Post: [epmnerd.com/blog/databricks-jdbc-essbase-21c](https://epmnerd.com/blog/databricks-jdbc-essbase-21c)
+
+Series: [Databricks JDBC for Essbase 21c](../README.md)
 
 **This is an unofficial custom build.** It is not a Databricks release. Prefer an official Java 8 binary if Databricks ever ships one. Until then, rebuild from their [`jdk-8`](https://github.com/databricks/databricks-jdbc/tree/jdk-8) branch, which now has the `Auth_Scope` fix in source.
 
