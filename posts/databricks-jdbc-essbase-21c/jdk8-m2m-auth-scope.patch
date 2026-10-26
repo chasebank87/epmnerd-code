@@ -1,0 +1,261 @@
+diff --git a/assembly-thin/pom.xml b/assembly-thin/pom.xml
+index 83313186..8d8061d6 100644
+--- a/assembly-thin/pom.xml
++++ b/assembly-thin/pom.xml
+@@ -7,7 +7,7 @@
+     <parent>
+         <groupId>com.databricks</groupId>
+         <artifactId>databricks-jdbc-parent</artifactId>
+-        <version>3.2.2-SNAPSHOT</version>
++        <version>3.2.2-jdk8-authscope.1</version>
+     </parent>
+ 
+     <artifactId>databricks-jdbc-thin</artifactId>
+@@ -51,7 +51,7 @@
+         <dependency>
+             <groupId>com.databricks</groupId>
+             <artifactId>databricks-jdbc-core</artifactId>
+-            <version>3.2.2-SNAPSHOT</version>
++            <version>3.2.2-jdk8-authscope.1</version>
+         </dependency>
+     </dependencies>
+ 
+diff --git a/assembly-uber/pom.xml b/assembly-uber/pom.xml
+index 604bb61f..e34fe66d 100644
+--- a/assembly-uber/pom.xml
++++ b/assembly-uber/pom.xml
+@@ -7,7 +7,7 @@
+     <parent>
+         <groupId>com.databricks</groupId>
+         <artifactId>databricks-jdbc-parent</artifactId>
+-        <version>3.2.2-SNAPSHOT</version>
++        <version>3.2.2-jdk8-authscope.1</version>
+     </parent>
+ 
+     <artifactId>databricks-jdbc</artifactId>
+@@ -51,7 +51,7 @@
+         <dependency>
+             <groupId>com.databricks</groupId>
+             <artifactId>databricks-jdbc-core</artifactId>
+-            <version>3.2.2-SNAPSHOT</version>
++            <version>3.2.2-jdk8-authscope.1</version>
+         </dependency>
+     </dependencies>
+ 
+diff --git a/jdbc-core/pom.xml b/jdbc-core/pom.xml
+index cd160d36..0171f6d9 100644
+--- a/jdbc-core/pom.xml
++++ b/jdbc-core/pom.xml
+@@ -6,7 +6,7 @@
+   <parent>
+     <groupId>com.databricks</groupId>
+     <artifactId>databricks-jdbc-parent</artifactId>
+-    <version>3.2.2-SNAPSHOT</version>
++    <version>3.2.2-jdk8-authscope.1</version>
+   </parent>
+ 
+   <artifactId>databricks-jdbc-core</artifactId>
+diff --git a/pom.xml b/pom.xml
+index 28c09851..6150a344 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -5,7 +5,7 @@
+   <groupId>com.databricks</groupId>
+   <artifactId>databricks-jdbc-parent</artifactId>
+   <!-- This value may be modified by a release script to reflect the current version of the driver. -->
+-  <version>3.2.2-SNAPSHOT</version>
++  <version>3.2.2-jdk8-authscope.1</version>
+   <packaging>pom</packaging>
+   <name>Databricks JDBC Parent</name>
+   <description>Parent POM for Databricks JDBC Driver.</description>
+@@ -62,7 +62,7 @@
+     <build-helper-maven-plugin.version>3.6.1</build-helper-maven-plugin.version>
+ 
+     <!-- Dependency Versions -->
+-    <databricks-jdbc-version>3.2.2-SNAPSHOT</databricks-jdbc-version>
++    <databricks-jdbc-version>3.2.2-jdk8-authscope.1</databricks-jdbc-version>
+     <!-- Pinned for JDK 8 compatibility: Arrow 14+ requires Java 11 -->
+     <arrow.version>13.0.0</arrow.version>
+     <commons-lang3.version>3.18.0</commons-lang3.version>
+diff --git a/src/main/java/com/databricks/jdbc/common/util/DatabricksAuthUtil.java b/src/main/java/com/databricks/jdbc/common/util/DatabricksAuthUtil.java
+index 00342864..fa7e1d9c 100644
+--- a/src/main/java/com/databricks/jdbc/common/util/DatabricksAuthUtil.java
++++ b/src/main/java/com/databricks/jdbc/common/util/DatabricksAuthUtil.java
+@@ -11,6 +11,9 @@ import com.databricks.sdk.core.http.HttpClient;
+ import com.nimbusds.jwt.SignedJWT;
+ import java.io.IOException;
+ import java.text.ParseException;
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.List;
+ 
+ public class DatabricksAuthUtil {
+   private static final JdbcLogger LOGGER = JdbcLoggerFactory.getLogger(DatabricksAuthUtil.class);
+@@ -50,6 +53,22 @@ public class DatabricksAuthUtil {
+     return newConfig;
+   }
+ 
++  /**
++   * Splits Auth_Scope on whitespace or commas; returns an empty list for null/blank. Java 8 safe.
++   */
++  public static List<String> parseOAuthScopes(String authScope) {
++    if (authScope == null || authScope.trim().isEmpty()) {
++      return Collections.emptyList();
++    }
++    List<String> out = new ArrayList<>();
++    for (String s : authScope.trim().split("[\\s,]+")) {
++      if (!s.isEmpty()) {
++        out.add(s);
++      }
++    }
++    return out;
++  }
++
+   public static Boolean isTokenJWT(String accessToken) {
+     try {
+       // If token is parsable, it is a JWT
+diff --git a/src/main/java/com/databricks/jdbc/dbclient/impl/common/ClientConfigurator.java b/src/main/java/com/databricks/jdbc/dbclient/impl/common/ClientConfigurator.java
+index 9ee0f9ee..e2cab345 100644
+--- a/src/main/java/com/databricks/jdbc/dbclient/impl/common/ClientConfigurator.java
++++ b/src/main/java/com/databricks/jdbc/dbclient/impl/common/ClientConfigurator.java
+@@ -387,6 +387,10 @@ public class ClientConfigurator implements Closeable {
+             .setAuthType(jwtProvider.authType())
+             .setCredentialsProvider(wrapWithTokenFederationIfEnabled(jwtProvider));
+       } else {
++        List<String> scopes = DatabricksAuthUtil.parseOAuthScopes(connectionContext.getAuthScope());
++        if (!scopes.isEmpty()) {
++          databricksConfig.setScopes(new ArrayList<>(scopes));
++        }
+         CredentialsProvider m2mProvider = new OAuthM2MServicePrincipalCredentialsProvider();
+         databricksConfig
+             .setAuthType(DatabricksJdbcConstants.M2M_AUTH_TYPE)
+diff --git a/src/test/java/com/databricks/jdbc/common/util/DatabricksAuthUtilTest.java b/src/test/java/com/databricks/jdbc/common/util/DatabricksAuthUtilTest.java
+index e87d4db5..5e5d1119 100644
+--- a/src/test/java/com/databricks/jdbc/common/util/DatabricksAuthUtilTest.java
++++ b/src/test/java/com/databricks/jdbc/common/util/DatabricksAuthUtilTest.java
+@@ -15,6 +15,8 @@ import com.nimbusds.jose.jwk.RSAKey;
+ import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
+ import com.nimbusds.jwt.JWTClaimsSet;
+ import com.nimbusds.jwt.SignedJWT;
++import java.util.Arrays;
++import java.util.Collections;
+ import java.util.Date;
+ import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+@@ -69,4 +71,20 @@ public class DatabricksAuthUtilTest {
+     assertEquals(true, DatabricksAuthUtil.isTokenJWT(JWT));
+     assertEquals(false, DatabricksAuthUtil.isTokenJWT(PAT));
+   }
++
++  @Test
++  public void testParseOAuthScopes() {
++    assertEquals(Collections.emptyList(), DatabricksAuthUtil.parseOAuthScopes(null));
++    assertEquals(Collections.emptyList(), DatabricksAuthUtil.parseOAuthScopes("  "));
++    assertEquals(Collections.singletonList("sql"), DatabricksAuthUtil.parseOAuthScopes(" sql "));
++    assertEquals(
++        Arrays.asList("sql", "offline_access"),
++        DatabricksAuthUtil.parseOAuthScopes("sql offline_access"));
++    assertEquals(
++        Arrays.asList("sql", "offline_access"),
++        DatabricksAuthUtil.parseOAuthScopes("sql,offline_access"));
++    assertEquals(
++        Arrays.asList("sql", "offline_access", "all-apis"),
++        DatabricksAuthUtil.parseOAuthScopes(" ,sql ,\toffline_access,, all-apis "));
++  }
+ }
+diff --git a/src/test/java/com/databricks/jdbc/dbclient/impl/common/ClientConfiguratorTest.java b/src/test/java/com/databricks/jdbc/dbclient/impl/common/ClientConfiguratorTest.java
+index d0dbc630..9b1a4e19 100644
+--- a/src/test/java/com/databricks/jdbc/dbclient/impl/common/ClientConfiguratorTest.java
++++ b/src/test/java/com/databricks/jdbc/dbclient/impl/common/ClientConfiguratorTest.java
+@@ -106,6 +106,47 @@ public class ClientConfiguratorTest {
+     assertEquals(DatabricksJdbcConstants.M2M_AUTH_TYPE, config.getAuthType());
+   }
+ 
++  @Test
++  void setupM2MConfig_WithAuthScope_UsesProvidedScope() throws DatabricksSQLException {
++    setupM2MClientSecretMocks();
++    when(mockContext.getAuthScope()).thenReturn("sql");
++    configurator = new ClientConfigurator(mockContext);
++
++    DatabricksConfig config = configurator.getDatabricksConfig();
++    assertEquals(DatabricksJdbcConstants.M2M_AUTH_TYPE, config.getAuthType());
++    assertEquals(Collections.singletonList("sql"), config.getScopes());
++  }
++
++  @Test
++  void setupM2MConfig_WithoutAuthScope_UsesSdkDefaultScope() throws DatabricksSQLException {
++    setupM2MClientSecretMocks();
++    configurator = new ClientConfigurator(mockContext);
++
++    DatabricksConfig config = configurator.getDatabricksConfig();
++    assertEquals(DatabricksJdbcConstants.M2M_AUTH_TYPE, config.getAuthType());
++    assertEquals(Collections.singletonList("all-apis"), config.getScopes());
++  }
++
++  @Test
++  void setupM2MConfig_WithMultipleAuthScopes_UsesAllScopes() throws DatabricksSQLException {
++    setupM2MClientSecretMocks();
++    when(mockContext.getAuthScope()).thenReturn("sql offline_access");
++    configurator = new ClientConfigurator(mockContext);
++
++    DatabricksConfig config = configurator.getDatabricksConfig();
++    assertEquals(Arrays.asList("sql", "offline_access"), config.getScopes());
++  }
++
++  private void setupM2MClientSecretMocks() throws DatabricksSQLException {
++    when(mockContext.getAuthMech()).thenReturn(AuthMech.OAUTH);
++    when(mockContext.getAuthFlow()).thenReturn(AuthFlow.CLIENT_CREDENTIALS);
++    when(mockContext.getHostForOAuth()).thenReturn("https://oauth-client.databricks.com");
++    when(mockContext.getClientId()).thenReturn("client-id");
++    when(mockContext.getClientSecret()).thenReturn("client-secret");
++    when(mockContext.getHttpConnectionPoolSize()).thenReturn(100);
++    when(mockContext.getHttpMaxConnectionsPerRoute()).thenReturn(100);
++  }
++
+   @Test
+   void getWorkspaceClient_OAuthWithClientCredentials_AuthenticatesCorrectlyGCP()
+       throws DatabricksParsingException, DatabricksSSLException, DatabricksValidationException {
+diff --git a/test-assembly-thin/pom.xml b/test-assembly-thin/pom.xml
+index cab4b45f..2dd5b74e 100644
+--- a/test-assembly-thin/pom.xml
++++ b/test-assembly-thin/pom.xml
+@@ -7,7 +7,7 @@
+     <parent>
+         <groupId>com.databricks</groupId>
+         <artifactId>databricks-jdbc-parent</artifactId>
+-        <version>3.2.2-SNAPSHOT</version>
++        <version>3.2.2-jdk8-authscope.1</version>
+     </parent>
+ 
+     <artifactId>test-databricks-jdbc-thin</artifactId>
+@@ -24,7 +24,7 @@
+         <dependency>
+             <groupId>com.databricks</groupId>
+             <artifactId>databricks-jdbc-thin</artifactId>
+-            <version>3.2.2-SNAPSHOT</version>
++            <version>3.2.2-jdk8-authscope.1</version>
+         </dependency>
+         <dependency>
+             <groupId>org.junit.jupiter</groupId>
+diff --git a/test-assembly-uber/pom.xml b/test-assembly-uber/pom.xml
+index 9155e3f8..0c315112 100644
+--- a/test-assembly-uber/pom.xml
++++ b/test-assembly-uber/pom.xml
+@@ -7,7 +7,7 @@
+   <parent>
+     <groupId>com.databricks</groupId>
+     <artifactId>databricks-jdbc-parent</artifactId>
+-    <version>3.2.2-SNAPSHOT</version>
++    <version>3.2.2-jdk8-authscope.1</version>
+   </parent>
+ 
+   <artifactId>test-databricks-jdbc-uber</artifactId>
+@@ -24,7 +24,7 @@
+     <dependency>
+       <groupId>com.databricks</groupId>
+       <artifactId>databricks-jdbc</artifactId>
+-      <version>3.2.2-SNAPSHOT</version>
++      <version>3.2.2-jdk8-authscope.1</version>
+     </dependency>
+     <dependency>
+       <groupId>org.junit.jupiter</groupId>
