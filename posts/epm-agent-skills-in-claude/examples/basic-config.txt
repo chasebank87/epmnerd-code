@@ -1,0 +1,4 @@
+EPM Environment URL: https://<service>-<tenant>.epm.<region>.ocs.oraclecloud.com
+EPM Environment Name: EPM Test
+Username: <service.account@example.com>
+Password: <password>

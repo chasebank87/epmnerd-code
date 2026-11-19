@@ -27,5 +27,6 @@ git clone https://github.com/chasebank87/epmnerd-code.git
 | [EPM REST from Groovy via Connections](https://epmnerd.com/blog/named-connections-for-epm-rest) (series) | [`posts/epm-rest-from-groovy`](posts/epm-rest-from-groovy) |
 | [Databricks JDBC for Essbase 21c](https://epmnerd.com/blog/databricks-jdbc-essbase-21c) (series) | [`posts/essbase-databricks-jdbc`](posts/essbase-databricks-jdbc) |
 | [Oracle Cloud EPM 26.11 REST APIs](https://epmnerd.com/blog/oracle-cloud-epm-26-11) (series) | [`posts/epm-26-11-rest-apis`](posts/epm-26-11-rest-apis) |
+| [Oracle EPM Agent Skills in Claude](https://epmnerd.com/blog/epm-agent-skills-in-claude) | [`posts/epm-agent-skills-in-claude`](posts/epm-agent-skills-in-claude) |
 
 No credentials. Named Connections in the EPM app hold the host and Basic auth. The Databricks JAR in this repo is an unofficial Java 8 build. Put the client secret in an environment variable or in Essbase, not in a file here.

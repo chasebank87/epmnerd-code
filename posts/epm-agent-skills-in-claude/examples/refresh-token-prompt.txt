@@ -1,0 +1,3 @@
+Use OAuth refresh-token authentication with my attached token file for EPM Test.
+EPM URL: https://<service>-<tenant>.epm.<region>.ocs.oraclecloud.com
+client_id: <public client ID from the identity domain>
